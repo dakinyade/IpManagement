@@ -1,14 +1,13 @@
 package com.test.ipmanagement.model.entities;
 
 
-import com.test.ipmanagement.model.ResourceState;
+import com.test.ipmanagement.util.IpUtil;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.Entity;
 import javax.persistence.Id;
-import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -24,5 +23,19 @@ public class IpPool {
     private String capacityDemand;
     private String lowerBound;
     private String upperBound;
+
+
+    public int getUppperBoundIntValue() {
+        return IpUtil.splitIpAndGetPosition(
+                this.upperBound,
+                3);
+    }
+
+    public int getLowerBoundIntValue() {
+        return IpUtil.splitIpAndGetPosition(
+                this.lowerBound,
+                3);
+    }
+
 
 }

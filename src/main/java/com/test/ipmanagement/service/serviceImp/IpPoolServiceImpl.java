@@ -1,16 +1,17 @@
 package com.test.ipmanagement.service.serviceImp;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.test.ipmanagement.model.entities.IpPool;
 import com.test.ipmanagement.model.repositories.IpPoolRepository;
 import com.test.ipmanagement.service.IpPoolService;
-import org.json.simple.JSONArray;
-import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Arrays;
 
 @Service
 public class IpPoolServiceImpl implements IpPoolService {
@@ -21,35 +22,28 @@ public class IpPoolServiceImpl implements IpPoolService {
     @Override
     public void loadIpPool() throws IOException, ParseException {
 
-
         try {
-            Object obj = new JSONParser().parse(new FileReader("ip-pools.json"));
 
-            JSONArray jo = (JSONArray) obj;
+            byte[] jsonData = Files.readAllBytes(Paths.get("ip-pools.json"));
+            ObjectMapper objectMapper = new ObjectMapper();
+            IpPool[] ipPoolRetVal = objectMapper.readValue(jsonData, IpPool[].class);
 
+            Arrays.asList(ipPoolRetVal).stream().forEach(e -> {
+                IpPool ipPool = new IpPool();
+                ipPool.setUpperBound(e.getUpperBound());
+                ipPool.setDescription(e.getDescription());
+                ipPool.setLowerBound(e.getLowerBound());
+                ipPool.setId(e.getId());
+                ipPool.setCapacityDemand(e.getCapacityDemand());
 
-            Object id =  jo.get(1);
-            Object description =  jo.get(2);
-            Object capacityDemand = jo.get(3);
-            Object lowerBound = jo.get(4);
-            Object upperBound = jo.get(5);
-
-            IpPool ipPool = new IpPool();
-            ipPool.setId(Integer.valueOf(Integer.valueOf(id.toString())));
-            ipPool.setDescription(description.toString());
-            ipPool.setCapacityDemand(capacityDemand.toString());
-            ipPool.setLowerBound(lowerBound.toString());
-            ipPool.setUpperBound(upperBound.toString());
-            this.ipPoolRepository.save(ipPool);
+                this.ipPoolRepository.save(e);
+            });
 
         } catch (IOException e) {
-            e.printStackTrace();
-        } catch (ParseException e) {
             e.printStackTrace();
         }
 
     }
-
 
     public IpPool retrivePoolById(int ipPoolId) {
 
@@ -58,13 +52,11 @@ public class IpPoolServiceImpl implements IpPoolService {
         return ipPool;
     }
 
-
     public boolean determineIpAllocation(IpPool ipPool, int lastIpRangeNo) {
 
-        int upperBound = Integer.valueOf(ipPool.getUpperBound());
-        int lowerBound = Integer.valueOf(ipPool.getLowerBound());
-
-        if ((lastIpRangeNo >= upperBound) && (lastIpRangeNo <= lowerBound)) {
+        if ((lastIpRangeNo >= ipPool.getLowerBoundIntValue())
+                &&
+                (lastIpRangeNo <= ipPool.getUppperBoundIntValue())) {
             return true;
         }
         return false;
